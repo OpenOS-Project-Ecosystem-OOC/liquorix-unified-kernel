@@ -50,7 +50,7 @@ jobs:
           docker run --rm \
             --net=host \
             -v "$PWD/.upstream-cache:/liquorix-package" \
-            liquorix_amd64/debian/bookworm \
+            liquorix_amd64/${{ matrix.distro }}/${{ matrix.release }} \
             /liquorix-package/scripts/debian/common_bootstrap.sh
 
       - name: Build source package
@@ -62,7 +62,7 @@ jobs:
             --ulimit nofile=524288:524288 \
             -v "$PWD/.upstream-cache:/liquorix-package" \
             -v "$PWD/artifacts/debian/${{ matrix.release }}:/liquorix-package/artifacts/debian/${{ matrix.release }}" \
-            liquorix_amd64/debian/bookworm \
+            liquorix_amd64/${{ matrix.distro }}/${{ matrix.release }} \
             /liquorix-package/scripts/debian/container_build-source.sh \
               "${{ matrix.distro }}" "${{ matrix.release }}" "1"
 

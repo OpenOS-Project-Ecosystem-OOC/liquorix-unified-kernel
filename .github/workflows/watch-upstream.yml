@@ -5,8 +5,8 @@ name: Watch upstream
 # to update a VERSION file and trigger the release pipeline.
 on:
   schedule:
-    - cron: "0 6 * * *"   # 06:00 UTC daily
-  workflow_dispatch:        # allow manual trigger
+    - cron: "0 6 * * *" # 06:00 UTC daily
+  workflow_dispatch: # allow manual trigger
 
 permissions:
   contents: write
@@ -20,7 +20,7 @@ jobs:
     if: github.repository == 'Interested-Deving-1896/liquorix-unified-kernel'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # ratchet:actions/checkout@v4
         env:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         with:

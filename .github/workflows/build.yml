@@ -97,6 +97,14 @@ jobs:
       - name: Bootstrap
         run: ./scripts/bootstrap.sh arch
 
+      - name: Download kernel source
+        run: |
+          docker run --rm \
+            --net=host \
+            -v "$PWD/.upstream-cache:/liquorix-package" \
+            liquorix_amd64/archlinux/latest \
+            /liquorix-package/scripts/archlinux/common_bootstrap.sh
+
       - name: Build package
         run: make build-arch ARCH=x86_64 PROCS=2
 

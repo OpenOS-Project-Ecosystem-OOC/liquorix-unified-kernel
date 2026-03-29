@@ -1,0 +1,8 @@
+riscv64 config
+==============
+
+This directory will contain the Liquorix kernel config for RISC-V 64-bit.
+
+Status: NOT YET AUTHORED
+
+To contribute this config, see docs/adding-arch.md.

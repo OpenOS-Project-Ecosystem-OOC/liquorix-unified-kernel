@@ -1,0 +1,8 @@
+arm64 config
+============
+
+This directory will contain the Liquorix kernel config for arm64 (AArch64).
+
+Status: NOT YET AUTHORED
+
+To contribute this config, see docs/adding-arch.md.

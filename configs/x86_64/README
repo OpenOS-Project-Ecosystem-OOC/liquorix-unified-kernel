@@ -1,0 +1,10 @@
+x86_64 config
+=============
+
+The kernel config for x86_64 is pulled directly from the upstream
+damentz/liquorix-package at build time:
+
+  linux-liquorix/debian/config/kernelarch-x86/config-arch-64
+
+It is not vendored here to avoid drift. The build scripts fetch it from
+the matching kernel branch of the upstream repo.

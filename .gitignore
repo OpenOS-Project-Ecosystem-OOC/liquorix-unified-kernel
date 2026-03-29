@@ -1,0 +1,30 @@
+# Build artifacts
+artifacts/
+*.deb
+*.pkg.tar.zst
+*.rpm
+*.tar.gz
+*.tar.xz
+
+# Kernel build
+*.o
+*.ko
+*.mod
+*.mod.c
+*.symvers
+*.order
+Module.symvers
+modules.builtin
+
+# Temp files
+*.tmp
+*.log
+*.swp
+*.swo
+.DS_Store
+
+# Docker
+.docker/
+
+# Downloaded sources
+src/

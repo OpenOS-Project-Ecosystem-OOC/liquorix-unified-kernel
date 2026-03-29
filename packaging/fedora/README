@@ -1,0 +1,9 @@
+Fedora packaging
+================
+
+Place here:
+- Dockerfile          — build environment image (base: fedora:latest)
+- kernel-liquorix.spec — RPM spec file
+- build-inside.sh     — script run inside the container to invoke rpmbuild
+
+Reference: https://github.com/damentz/liquorix-package/tree/6.x/master/scripts/fedora

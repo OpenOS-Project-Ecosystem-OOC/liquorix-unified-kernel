@@ -1,0 +1,11 @@
+Gentoo packaging
+================
+
+Gentoo builds run directly on the host via genkernel — no Docker container.
+The build logic lives in scripts/lib/build-gentoo.sh and
+scripts/lib/install-gentoo.sh.
+
+If a Gentoo ebuild is desired in the future, place it here:
+- linux-liquorix-<version>.ebuild
+
+Reference: https://github.com/GKernelCI/gentoo-sources-build

@@ -1,0 +1,10 @@
+Arch Linux packaging
+====================
+
+Place here:
+- Dockerfile          — build environment image (base: archlinux:latest)
+- PKGBUILD            — adapted from archdevlab/linux-lqx, parameterized on ARCH
+- build-inside.sh     — script run inside the container to invoke makepkg
+
+Reference: https://github.com/archdevlab/linux-lqx
+           https://github.com/damentz/liquorix-package/tree/6.x/master/scripts/archlinux

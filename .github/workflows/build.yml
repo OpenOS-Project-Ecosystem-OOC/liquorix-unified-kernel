@@ -108,6 +108,10 @@ jobs:
   build-fedora:
     name: "rpm / fedora ${{ matrix.release }}"
     runs-on: ubuntu-latest
+    # Upstream damentz/liquorix-package does not CI-test the fedora build.
+    # The 6.19 container_build-binary.sh has a hardcoded lqx1 patch filename
+    # that doesn't match the actual lqx2 patch. Allow failure until upstream fixes it.
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:

@@ -55,7 +55,7 @@ build_deb() {
         --tmpfs /build:exec \
         --ulimit nofile=524288:524288 \
         $(gpg_docker_flags /root) \
-        -v "${cache_dir}:/liquorix-package:ro" \
+        -v "${cache_dir}:/liquorix-package" \
         -v "${artifacts_dir}:/liquorix-package/artifacts/debian/${release}" \
         -e DISTRO="$distro" \
         -e RELEASE="$release" \
@@ -79,7 +79,7 @@ build_deb() {
         --net=host \
         --ulimit nofile=524288:524288 \
         $(gpg_docker_flags /root) \
-        -v "${cache_dir}:/liquorix-package:ro" \
+        -v "${cache_dir}:/liquorix-package" \
         -v "${artifacts_dir}:/liquorix-package/artifacts/debian/${release}" \
         -e PROCS="$procs" \
         -e BUILD="$build_num" \

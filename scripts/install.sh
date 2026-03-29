@@ -29,6 +29,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=lib/log.sh
 source "${SCRIPT_DIR}/lib/log.sh"
+# shellcheck source=lib/releases.sh
+source "${SCRIPT_DIR}/lib/releases.sh"
 # shellcheck source=lib/detect.sh
 source "${SCRIPT_DIR}/lib/detect.sh"
 # shellcheck source=lib/install-debian.sh

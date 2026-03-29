@@ -1,11 +1,6 @@
 #!/bin/bash
-# Install Liquorix on openSUSE via local RPM.
+# Install Liquorix on openSUSE via GitHub Releases or local RPM.
 # Sourced by install.sh — do not execute directly.
-#
-# openSUSE uses zypper + RPM. No official Liquorix OBS repo exists yet.
-# This installs from a locally built RPM produced by `make build-opensuse`.
-# When an OBS repo is published, replace the local-install path with:
-#   zypper addrepo <url> liquorix && zypper install kernel-liquorix
 
 install_opensuse() {
     local arch=$1
@@ -16,17 +11,38 @@ install_opensuse() {
         exit 1
     fi
 
+    # Try GitHub Releases first
+    local release_ver
+    release_ver=$(latest_release_version)
+
+    if [[ -n "$release_ver" ]]; then
+        local kver="${release_ver#v}"
+        local filename="kernel-liquorix-${kver}.opensuse.tumbleweed.x86_64.rpm"
+        local tmp_rpm
+        tmp_rpm=$(mktemp /tmp/kernel-liquorix-XXXXXX.rpm)
+
+        if download_release_asset "$filename" "$tmp_rpm"; then
+            log INFO "Installing from GitHub Release: ${filename}"
+            zypper --non-interactive install "$tmp_rpm"
+            rm -f "$tmp_rpm"
+            log INFO "Liquorix kernel installed"
+            return
+        fi
+        rm -f "$tmp_rpm"
+        log WARN "GitHub Release asset not found, falling back to local artifact"
+    fi
+
+    # Fall back to locally built RPM
     local rpm_path
     rpm_path=$(find artifacts/opensuse -name 'kernel-liquorix-*.rpm' \
         ! -name '*.src.rpm' 2>/dev/null | sort -V | tail -n1)
 
     if [[ -z "$rpm_path" ]]; then
-        log ERROR "No openSUSE RPM found under artifacts/opensuse/."
-        log WARN  "Build first with: make build-opensuse"
+        log ERROR "No openSUSE RPM found. Build first with: make build-opensuse"
         exit 1
     fi
 
-    log INFO "Installing $rpm_path"
+    log INFO "Installing local RPM: ${rpm_path}"
     zypper --non-interactive install "$rpm_path"
     log INFO "Liquorix kernel installed"
 }

@@ -3,12 +3,21 @@
 # Sourced by build.sh — do not execute directly.
 #
 # The Debian pipeline has two stages:
-#   1. Source build  — runs in a fixed debian/bookworm container, produces
-#                      .dsc + .orig.tar.xz under artifacts/debian/<release>/
-#   2. Binary build  — runs in the target distro/release container, consumes
-#                      the source packages and produces installable .deb files
+#   1. Source build  — runs in debian/bookworm, produces .dsc + .orig.tar.xz
+#   2. Binary build  — runs in target distro/release, produces .deb files
 #
-# Requires: Docker, upstream scripts synced by scripts/bootstrap.sh
+# The upstream container scripts (container_build-source.sh,
+# container_build-binary.sh) are tightly coupled to the damentz/liquorix-package
+# repo layout. They compute paths relative to their own location and expect:
+#   /liquorix-package/linux-liquorix/debian/   (package rules)
+#   /liquorix-package/artifacts/               (output dir)
+#   /liquorix-package/scripts/debian/lib.sh    (shared helpers)
+#
+# We therefore mount the upstream cache (fetched by bootstrap.sh) as
+# /liquorix-package inside the container, and bind-mount our artifacts dir
+# over the upstream cache's artifacts/ so output lands in our tree.
+#
+# Requires: Docker, upstream cache populated by scripts/bootstrap.sh
 
 build_deb() {
     local distro=$1   # debian | ubuntu
@@ -16,17 +25,21 @@ build_deb() {
     local procs=$3
     local build_num=$4
 
-    # Image tag format: liquorix_<arch>/<distro>/<release>
     local docker_arch="amd64"
     [[ "${ARCH:-x86_64}" == "arm64"   ]] && docker_arch="arm64v8"
     [[ "${ARCH:-x86_64}" == "riscv64" ]] && docker_arch="riscv64"
 
-    # Source packages are always built in debian/bookworm (upstream convention)
     local source_image="liquorix_amd64/debian/bookworm"
     local binary_image="liquorix_${docker_arch}/${distro}/${release}"
 
     local artifacts_dir="${REPO_ROOT}/artifacts/debian/${release}"
+    local cache_dir="${REPO_ROOT}/.upstream-cache"
     mkdir -p "$artifacts_dir"
+
+    if [[ ! -d "${cache_dir}/.git" ]]; then
+        log ERROR "Upstream cache not found at ${cache_dir}. Run: make bootstrap-debian"
+        exit 1
+    fi
 
     # ── Stage 1: source build ─────────────────────────────────────────────────
 
@@ -36,17 +49,20 @@ build_deb() {
     fi
 
     log INFO "Building source package for ${distro}/${release}"
+    # shellcheck disable=SC2046
     docker run --rm \
         --net=host \
         --tmpfs /build:exec \
         --ulimit nofile=524288:524288 \
-        -v "${REPO_ROOT}:/liquorix-package:ro" \
+        $(gpg_docker_flags /root) \
+        -v "${cache_dir}:/liquorix-package:ro" \
         -v "${artifacts_dir}:/liquorix-package/artifacts/debian/${release}" \
         -e DISTRO="$distro" \
         -e RELEASE="$release" \
         -e BUILD="$build_num" \
         "$source_image" \
-        /liquorix-package/packaging/debian/build-source-inside.sh
+        /liquorix-package/scripts/debian/container_build-source.sh \
+            "$distro" "$release" "$build_num"
 
     log INFO "Source packages written to ${artifacts_dir}"
 
@@ -58,18 +74,18 @@ build_deb() {
     fi
 
     log INFO "Building binary packages for ${distro}/${release} (jobs=${procs})"
+    # shellcheck disable=SC2046
     docker run --rm \
         --net=host \
         --ulimit nofile=524288:524288 \
-        -v "${REPO_ROOT}:/liquorix-package:ro" \
+        $(gpg_docker_flags /root) \
+        -v "${cache_dir}:/liquorix-package:ro" \
         -v "${artifacts_dir}:/liquorix-package/artifacts/debian/${release}" \
         -e PROCS="$procs" \
         -e BUILD="$build_num" \
-        -e ARCH="$docker_arch" \
-        -e DISTRO="$distro" \
-        -e RELEASE="$release" \
         "$binary_image" \
-        /liquorix-package/packaging/debian/build-inside.sh
+        /liquorix-package/scripts/debian/container_build-binary.sh \
+            "$docker_arch" "$distro" "$release" "$build_num"
 
     log INFO "Binary packages written to ${artifacts_dir}"
 }

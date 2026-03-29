@@ -1,25 +1,22 @@
 #!/bin/bash
 # Runs inside the openSUSE build container.
-# Reuses the Fedora RPM spec with openSUSE-compatible adjustments.
+# Reuses the Fedora RPM spec with openSUSE-compatible dist tag.
+# Mounts: /build = our repo (ro), /liquorix-package = upstream cache (ro)
 set -euo pipefail
 
-REPO_ROOT="/build"
-SPEC="${REPO_ROOT}/packaging/fedora/kernel-liquorix.spec"
+SPEC="/build/packaging/fedora/kernel-liquorix.spec"
 OUT_DIR="/artifacts"
 
 : "${PROCS:=2}"
 : "${BUILD:=1}"
 : "${RELEASE:=tumbleweed}"
 
-# Resolve kernel version from upstream env.sh if available
-if [[ -f "${REPO_ROOT}/packaging/fedora/env.sh" ]]; then
-    # shellcheck source=/dev/null
-    source "${REPO_ROOT}/packaging/fedora/env.sh"
-fi
+# Source upstream env.sh to get version_upstream and other variables
+# shellcheck source=/dev/null
+source /liquorix-package/scripts/fedora/env.sh
 
-: "${version_upstream:?version_upstream must be set in env.sh}"
+: "${version_upstream:?version_upstream not set in upstream env.sh}"
 
-# openSUSE uses %{dist} = .opensuse<release> or .suse
 DIST=".opensuse.${RELEASE}"
 
 rpmbuild -bb \
@@ -30,5 +27,4 @@ rpmbuild -bb \
     --define "_smp_mflags -j${PROCS}" \
     "$SPEC"
 
-# Copy built RPMs to output dir
 find ~/rpmbuild/RPMS -name '*.rpm' -exec cp -v {} "${OUT_DIR}/" \;

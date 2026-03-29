@@ -1,13 +1,8 @@
 #!/bin/bash
-# Install Liquorix on RHEL-family distros via local RPM.
-# Covers: RHEL, AlmaLinux, Rocky Linux, Oracle Linux, CentOS Stream, Nobara,
-#         Bazzite, Ultramarine, and any other dnf/rpm-based distro.
+# Install Liquorix on RHEL-family distros via GitHub Releases or local RPM.
+# Covers: RHEL, AlmaLinux, Rocky Linux, Oracle Linux, CentOS Stream,
+#         Nobara, Bazzite, Ultramarine, and any other dnf/rpm-based distro.
 # Sourced by install.sh — do not execute directly.
-#
-# No official Liquorix COPR exists yet. This installs from a locally built
-# RPM produced by `make build-fedora`. When a COPR is published, replace
-# the local-install path with:
-#   dnf copr enable damentz/liquorix && dnf install kernel-liquorix
 
 install_rhel() {
     local arch=$1
@@ -18,7 +13,28 @@ install_rhel() {
         exit 1
     fi
 
-    # Accept either fedora/ or rhel/ artifact dirs
+    # Try GitHub Releases first — use Fedora 42 RPM as the closest match
+    local release_ver
+    release_ver=$(latest_release_version)
+
+    if [[ -n "$release_ver" ]]; then
+        local kver="${release_ver#v}"
+        local filename="kernel-liquorix-${kver}.fc42.x86_64.rpm"
+        local tmp_rpm
+        tmp_rpm=$(mktemp /tmp/kernel-liquorix-XXXXXX.rpm)
+
+        if download_release_asset "$filename" "$tmp_rpm"; then
+            log INFO "Installing from GitHub Release: ${filename}"
+            dnf install -y "$tmp_rpm"
+            rm -f "$tmp_rpm"
+            log INFO "Liquorix kernel installed"
+            return
+        fi
+        rm -f "$tmp_rpm"
+        log WARN "GitHub Release asset not found, falling back to local artifact"
+    fi
+
+    # Fall back to locally built RPM
     local rpm_path
     rpm_path=$(find artifacts/fedora artifacts/rhel -name 'kernel-liquorix-*.rpm' \
         ! -name '*.src.rpm' 2>/dev/null | sort -V | tail -n1)
@@ -29,7 +45,7 @@ install_rhel() {
         exit 1
     fi
 
-    log INFO "Installing $rpm_path"
+    log INFO "Installing local RPM: ${rpm_path}"
     dnf install -y "$rpm_path"
     log INFO "Liquorix kernel installed"
 }

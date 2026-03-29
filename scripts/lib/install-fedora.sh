@@ -1,10 +1,6 @@
 #!/bin/bash
-# Install Liquorix on Fedora/RHEL via COPR or local RPM.
+# Install Liquorix on Fedora via GitHub Releases or local RPM.
 # Sourced by install.sh — do not execute directly.
-#
-# NOTE: No official Liquorix COPR exists yet. This installs from a locally
-# built RPM produced by `make build-binary-fedora`. When an official COPR
-# is published, replace the local-install path with a `dnf copr enable` call.
 
 install_fedora() {
     local arch=$1
@@ -15,18 +11,42 @@ install_fedora() {
         exit 1
     fi
 
-    # Look for a locally built RPM in the artifacts directory
+    # Detect Fedora release number
+    local fedora_rel
+    fedora_rel=$(rpm -E '%{fedora}' 2>/dev/null || grep -oP 'VERSION_ID=\K\d+' /etc/os-release || echo "")
+
+    # Try GitHub Releases first
+    local release_ver
+    release_ver=$(latest_release_version)
+
+    if [[ -n "$release_ver" && -n "$fedora_rel" ]]; then
+        local kver="${release_ver#v}"          # e.g. 6.12.1-lqx1
+        local filename="kernel-liquorix-${kver}.fc${fedora_rel}.x86_64.rpm"
+        local tmp_rpm
+        tmp_rpm=$(mktemp /tmp/kernel-liquorix-XXXXXX.rpm)
+
+        if download_release_asset "$filename" "$tmp_rpm"; then
+            log INFO "Installing from GitHub Release: ${filename}"
+            dnf install -y "$tmp_rpm"
+            rm -f "$tmp_rpm"
+            log INFO "Liquorix kernel installed"
+            return
+        fi
+        rm -f "$tmp_rpm"
+        log WARN "GitHub Release asset not found, falling back to local artifact"
+    fi
+
+    # Fall back to locally built RPM
     local rpm_path
-    rpm_path=$(find artifacts/fedora -name 'kernel-liquorix-*.rpm' \
+    rpm_path=$(find artifacts/fedora artifacts/rhel -name 'kernel-liquorix-*.rpm' \
         ! -name '*.src.rpm' 2>/dev/null | sort -V | tail -n1)
 
     if [[ -z "$rpm_path" ]]; then
-        log ERROR "No Fedora RPM found under artifacts/fedora/."
-        log WARN  "Build first with: make build-binary-fedora"
+        log ERROR "No RPM found. Build first with: make build-fedora"
         exit 1
     fi
 
-    log INFO "Installing $rpm_path"
+    log INFO "Installing local RPM: ${rpm_path}"
     dnf install -y "$rpm_path"
     log INFO "Liquorix kernel installed"
 }

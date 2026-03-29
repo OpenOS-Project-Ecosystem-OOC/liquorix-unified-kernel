@@ -27,6 +27,8 @@ SCRIPT_DIR="${REPO_ROOT}/scripts"
 source "${SCRIPT_DIR}/lib/log.sh"
 # shellcheck source=lib/detect.sh
 source "${SCRIPT_DIR}/lib/detect.sh"
+# shellcheck source=lib/gpg.sh
+source "${SCRIPT_DIR}/lib/gpg.sh"
 # shellcheck source=lib/build-common.sh
 source "${SCRIPT_DIR}/lib/build-common.sh"
 # shellcheck source=lib/build-deb.sh

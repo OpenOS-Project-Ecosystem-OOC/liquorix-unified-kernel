@@ -39,22 +39,20 @@ jobs:
         run: ./scripts/bootstrap.sh ${{ matrix.distro }}
 
       # Source build must run before binary build.
-      # It produces .dsc + .orig.tar.xz in artifacts/debian/<release>/
-      # which the binary build container consumes.
+      # Both stages mount .upstream-cache as /liquorix-package so the upstream
+      # container scripts find the expected damentz repo layout.
       - name: Build source package
         run: |
+          mkdir -p "artifacts/debian/${{ matrix.release }}"
           docker run --rm \
             --net=host \
             --tmpfs /build:exec \
             --ulimit nofile=524288:524288 \
-            -v "$PWD:/liquorix-package:ro" \
+            -v "$PWD/.upstream-cache:/liquorix-package:ro" \
             -v "$PWD/artifacts/debian/${{ matrix.release }}:/liquorix-package/artifacts/debian/${{ matrix.release }}" \
             liquorix_amd64/debian/bookworm \
-            /liquorix-package/packaging/debian/build-source-inside.sh
-        env:
-          DISTRO: ${{ matrix.distro }}
-          RELEASE: ${{ matrix.release }}
-          BUILD: "1"
+            /liquorix-package/scripts/debian/container_build-source.sh \
+              "${{ matrix.distro }}" "${{ matrix.release }}" "1"
 
       - name: Build binary packages
         run: |

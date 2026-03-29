@@ -78,7 +78,7 @@ install_gentoo() {
         all
 
     # Rebuild external modules
-    cd "/usr/src/linux-${kernel_version}-gentoo"
+    cd "/usr/src/linux-${kernel_version}-gentoo" || exit 1
     make LD=ld.bfd prepare
     make LD=ld.bfd modules_prepare
     emerge -b @module-rebuild

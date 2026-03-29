@@ -50,14 +50,13 @@ detect_arch() {
 #               non-Linux OSes)
 
 detect_distro() {
-    local id="" id_like="" pretty=""
+    local id="" id_like=""
 
     if [[ -f /etc/os-release ]]; then
         # shellcheck disable=SC1091
         source /etc/os-release 2>/dev/null || true
         id="${ID:-}"
         id_like="${ID_LIKE:-}"
-        pretty="${PRETTY_NAME:-}"
     fi
 
     # Normalise to lowercase, combine id + id_like for matching

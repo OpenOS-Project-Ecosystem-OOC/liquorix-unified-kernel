@@ -98,31 +98,20 @@ build_docker_image() {
 
 DISTROS=("${@:-${ALL_DISTROS[@]}}")
 
-# Resolve which upstream script dirs we need.
-# Distros with an empty upstream_dir (e.g. opensuse) are self-contained
-# and do not require a sync from damentz/liquorix-package.
-declare -A upstream_dirs_needed
+# Determine whether any requested distro needs the upstream cache.
+# Distros with an empty upstream_dir (e.g. opensuse) are self-contained.
+needs_upstream=0
 for distro in "${DISTROS[@]}"; do
     udir=$(upstream_dir "$distro")
-    [[ -n "$udir" ]] && upstream_dirs_needed["$udir"]=1
+    [[ -n "$udir" ]] && needs_upstream=1
 done
 
-# Fetch upstream scripts once per unique upstream dir.
-# env.sh must exist before any container_*.sh script is invoked — it is
-# sourced at the top of every container script for version/path variables.
-for udir in "${!upstream_dirs_needed[@]}"; do
-    fetch_upstream_scripts "$udir"
-done
-
-# Verify env.sh was synced for distros that require it
-for distro in "${DISTROS[@]}"; do
-    udir=$(upstream_dir "$distro")
-    [[ -z "$udir" ]] && continue
-    local_dir="${REPO_ROOT}/packaging/${udir}"
-    if [[ ! -f "${local_dir}/env.sh" ]]; then
-        log WARN "env.sh missing in ${local_dir} — upstream sync may have failed"
-    fi
-done
+# Fetch/update the full upstream cache once.
+# All container scripts are invoked directly from the cache at runtime —
+# we no longer rsync individual files into packaging/.
+if [[ $needs_upstream -eq 1 ]]; then
+    fetch_upstream_scripts ""
+fi
 
 # Build Docker images
 for distro in "${DISTROS[@]}"; do

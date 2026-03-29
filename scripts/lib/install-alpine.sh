@@ -12,6 +12,7 @@
 
 install_alpine() {
     local arch=$1
+    : "$arch"  # accepted for API consistency with other install_* functions
     log ERROR "Alpine Linux is not yet supported."
     log WARN  "Alpine uses musl libc. Liquorix pre-built packages require glibc."
     log WARN  "A custom APKBUILD is needed to package the kernel for Alpine."

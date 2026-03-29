@@ -87,6 +87,7 @@ build_docker_image() {
         --progress=plain \
         -f "$dockerfile" \
         -t "$image_tag" \
+        --load \
         --pull \
         --build-arg ARCH="$arch" \
         --build-arg DISTRO="$distro" \

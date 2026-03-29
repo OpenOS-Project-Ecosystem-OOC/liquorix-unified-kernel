@@ -27,26 +27,34 @@ jobs:
       - name: Get latest upstream branch
         id: upstream
         run: |
-          LATEST=$(git ls-remote --heads \
+          # Branch names are like "6.19/master" — parse changelog for exact version
+          BRANCH=$(git ls-remote --heads \
               https://github.com/damentz/liquorix-package \
-            | grep -oP '\d+\.\d+\.\d+-lqx\d+' \
+            | grep -oP '\d+\.\d+/master' \
             | sort -V | tail -1)
 
-          # Fallback: parse from branch names like 6.19/master
-          if [[ -z "$LATEST" ]]; then
-            BRANCH=$(git ls-remote --heads \
-                https://github.com/damentz/liquorix-package \
-              | grep -oP '\d+\.\d+/master' \
-              | sort -V | tail -1)
-            MAJOR="${BRANCH%/master}"
-            # Fetch the changelog to get the exact version
-            LATEST=$(curl -fsSL \
-              "https://raw.githubusercontent.com/damentz/liquorix-package/${BRANCH}/linux-liquorix/debian/changelog" \
-              | grep -oP '[\d]+\.[\d]+-[\d]+' | head -1 | sed 's/-/./' \
-              | awk -F. '{printf "%s.%s.%s-lqx%s\n", $1, $2, $3, $4}' \
-              || echo "")
+          if [[ -z "$BRANCH" ]]; then
+            echo "Could not determine upstream branch"
+            echo "latest=" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
+          MAJOR="${BRANCH%/master}"
+
+          # Parse changelog: "linux-liquorix (6.19-5) unstable" -> 6.19.10-lqx5
+          CHANGELOG=$(curl -fsSL \
+            "https://raw.githubusercontent.com/damentz/liquorix-package/${BRANCH}/linux-liquorix/debian/changelog")
+
+          # Get package version (e.g. 6.19-5) and kernel version from merge commit
+          PKG_VER=$(echo "$CHANGELOG" | grep -oP '^\S+ \(\K[\d.]+-\d+(?=\))' | head -1)
+          LQX_REL=$(echo "$PKG_VER" | grep -oP '\d+$')
+          KERNEL_VER=$(echo "$CHANGELOG" | grep -oP 'merge v\K[\d.]+' | head -1)
+
+          if [[ -z "$KERNEL_VER" ]]; then
+            KERNEL_VER="${MAJOR}.0"
+          fi
+
+          LATEST="${KERNEL_VER}-lqx${LQX_REL}"
           echo "latest=${LATEST}" >> "$GITHUB_OUTPUT"
           echo "Latest upstream version: ${LATEST}"
 

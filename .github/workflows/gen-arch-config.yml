@@ -62,12 +62,26 @@ jobs:
       - name: Download Liquorix patch
         run: |
           MAJOR=${{ steps.ver.outputs.major }}
-          # Fetch latest lqx release tag for this major version
-          LQX_REL=$(curl -s "https://api.github.com/repos/damentz/liquorix-package/branches" \
-            | grep -oP "\"name\":\s*\"${MAJOR}-\K[^\"]+(?=\")" | sort -V | tail -1)
+
+          # Branch names are like "6.19/master" — derive from the changelog
+          BRANCH="${MAJOR}/master"
+          LQX_REL=$(curl -fsSL \
+            "https://raw.githubusercontent.com/damentz/liquorix-package/${BRANCH}/linux-liquorix/debian/changelog" \
+            | grep -oP '^\S+ \(\K[\d.]+-\d+(?=\))' | head -1 | grep -oP '\d+$')
+
+          if [[ -z "$LQX_REL" ]]; then
+            echo "Could not determine LQX_REL from changelog, defaulting to 1"
+            LQX_REL=1
+          fi
+
           echo "LQX_REL=${LQX_REL}" >> "$GITHUB_ENV"
-          wget -q "https://github.com/damentz/liquorix-package/archive/${MAJOR}-${LQX_REL}.tar.gz"
-          tar -xf "${MAJOR}-${LQX_REL}.tar.gz"
+          echo "Using liquorix-package branch ${BRANCH}, release lqx${LQX_REL}"
+
+          wget -q "https://github.com/damentz/liquorix-package/archive/refs/heads/${BRANCH}.tar.gz" \
+            -O "liquorix-package-${MAJOR}-${LQX_REL}.tar.gz"
+          tar -xf "liquorix-package-${MAJOR}-${LQX_REL}.tar.gz"
+          # Rename extracted dir to expected name
+          mv "liquorix-package-${MAJOR}-master" "liquorix-package-${MAJOR}-${LQX_REL}" 2>/dev/null || true
 
       - name: Apply Liquorix patches
         run: |

@@ -13,6 +13,16 @@ permissions:
   pull-requests: write
 
 jobs:
+  # GitHub marks a workflow run as failure when every job is skipped.
+  # This no-op job runs unconditionally so the run always has a passing job,
+  # even when triggered by a push event (which modifies the workflow file on
+  # the default branch) rather than the intended schedule/workflow_dispatch.
+  noop:
+    name: No-op (always passes)
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "ok"
+
   check:
     name: Check for new upstream release
     runs-on: ubuntu-latest

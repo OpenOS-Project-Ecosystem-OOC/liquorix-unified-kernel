@@ -1,3 +1,4 @@
+```yaml
 name: Build
 
 on:
@@ -228,3 +229,4 @@ jobs:
         run: |
           find scripts/ packaging/ -name '*.sh' -print0 \
             | xargs -0 shellcheck --severity=warning
+```
